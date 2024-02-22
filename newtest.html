@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smooth Game Loop with Key Controls</title>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="scoreBoard">Score: 0</div>
+    <button id="restartButton">Restart</button>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        let playerX = 50;
+        let playerY = canvas.height - 50;
+        const playerSize = 30;
+        let items = [];
+        let enemies = [];
+        const itemSize = 20;
+        const enemySize = 25;
+        const maxItems = 5;
+        const maxEnemies = 3;
+        let score = 0;
+        let lastTimestamp = 0;
+        let deltaTime = 0;
+        let movingLeft = false;
+        let movingRight = false;
+        let gameOver = false;
+        function gameLoop(timestamp) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (lastTimestamp !== 0) {
+                deltaTime = (timestamp - lastTimestamp) / 1000;
+            }
+            lastTimestamp = timestamp;
+            if (movingLeft) {
+                playerX -= 200 * deltaTime; 
+            } else if (movingRight) {
+                playerX += 200 * deltaTime;
+            }
+            if (playerX < 0) {
+                playerX = 0;
+            } else if (playerX > canvas.width - playerSize) {
+                playerX = canvas.width - playerSize;
+            }
+            ctx.fillStyle = "blue";
+            ctx.fillRect(playerX, playerY, playerSize, playerSize);
+            let itemsToRemove = [];
+            for (let i = 0; i < items.length; i++) {
+                items[i].y += 200 * deltaTime;
+                ctx.fillStyle = "green";
+                ctx.fillRect(items[i].x, items[i].y, itemSize, itemSize);
+                if (
+                    playerX < items[i].x + itemSize &&
+                    playerX + playerSize > items[i].x &&
+                    playerY < items[i].y + itemSize &&
+                    playerY + playerSize > items[i].y
+                ) {
+                    itemsToRemove.push(i);
+                    score++;
+                    document.getElementById("scoreBoard").innerText = "Score: " + score;
+                }
+                if (items[i].y + itemSize < canvas.height) {
+                } else {
+                    itemsToRemove.push(i);
+                }
+            }
+            for (let i = itemsToRemove.length - 1; i >= 0; i--) {
+                items.splice(itemsToRemove[i], 1);
+            }
+            if (items.length < maxItems && Math.random() < 0.02) {
+                const itemX = Math.random() * (canvas.width - itemSize);
+                items.push({ x: itemX, y: 0 });
+            }
+            let enemiesToRemove = [];
+            for (let i = 0; i < enemies.length; i++) {
+                enemies[i].y += 200 * deltaTime;
+                ctx.fillStyle = "red";
+                ctx.fillRect(enemies[i].x, enemies[i].y, enemySize, enemySize);
+                if (
+                    playerX < enemies[i].x + enemySize &&
+                    playerX + playerSize > enemies[i].x &&
+                    playerY < enemies[i].y + enemySize &&
+                    playerY + playerSize > enemies[i].y
+                ) {
+                    gameOver = true;
+                }
+                if (enemies[i].y + enemySize < canvas.height) {
+                } else {
+                    enemiesToRemove.push(i);
+                }
+            }
+            for (let i = enemiesToRemove.length - 1; i >= 0; i--) {
+                enemies.splice(enemiesToRemove[i], 1);
+            }
+            if (enemies.length < maxEnemies && Math.random() < 0.02) {
+                const enemyX = Math.random() * (canvas.width - enemySize);
+                enemies.push({ x: enemyX, y: 0 });
+            }
+            if (!gameOver) {
+                requestAnimationFrame(gameLoop);
+            } else {
+                document.getElementById("scoreBoard").innerText = "Game Over! Final Score: " + score;
+            }
+        }
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "ArrowLeft") {
+                movingLeft = true;
+            } else if (event.key === "ArrowRight") {
+                movingRight = true;
+            }
+        });
+        document.addEventListener("keyup", function(event) {
+            if (event.key === "ArrowLeft") {
+                movingLeft = false;
+            } else if (event.key === "ArrowRight") {
+                movingRight = false;
+            }
+        });
+        document.getElementById("restartButton").addEventListener("click", function() {
+            playerX = 50;
+            playerY = canvas.height - 50;
+            items = [];
+            enemies = [];
+            score = 0;
+            lastTimestamp = 0;
+            deltaTime = 0;
+            movingLeft = false;
+            movingRight = false;
+            gameOver = false;
+            document.getElementById("scoreBoard").innerText = "Score: " + score;
+            requestAnimationFrame(gameLoop);
+        });
+        gameLoop(0);
+    </script>
+</body>
+</html>
